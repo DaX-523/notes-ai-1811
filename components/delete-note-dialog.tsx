@@ -10,28 +10,34 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { Note } from "@/lib/types";
 
 interface DeleteNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  note: Note;
 }
 
 export function DeleteNoteDialog({
   open,
   onOpenChange,
   onConfirm,
+  note,
 }: DeleteNoteDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setIsLoading(true);
-
-    // Simulate a delay
-    setTimeout(() => {
-      onConfirm();
+    const response = await supabase.from("notes").delete().eq("id", note?.id);
+    if (response.error) {
+      console.error("Error deleting note:", response.error);
       setIsLoading(false);
-    }, 500);
+      return;
+    }
+    onConfirm();
+    setIsLoading(false);
   };
 
   return (

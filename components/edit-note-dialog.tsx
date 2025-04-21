@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Note } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
 
 interface EditNoteDialogProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function EditNoteDialog({
     setContent(note.content);
   }, [note]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -47,14 +48,19 @@ export function EditNoteDialog({
       ...note,
       title,
       content,
-      updatedAt: new Date().toISOString(),
     };
-
-    // Simulate a delay
-    setTimeout(() => {
-      onUpdateNote(updatedNote);
+    const response = await supabase
+      .from("notes")
+      .update(updatedNote)
+      .eq("id", note?.id)
+      .select();
+    if (response.error) {
+      console.error("Error updating note:", response.error);
       setIsLoading(false);
-    }, 500);
+      return;
+    }
+    onUpdateNote(updatedNote);
+    setIsLoading(false);
   };
 
   return (

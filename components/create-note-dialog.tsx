@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Note } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
 
 interface CreateNoteDialogProps {
   open: boolean;
@@ -31,7 +32,7 @@ export function CreateNoteDialog({
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -39,17 +40,19 @@ export function CreateNoteDialog({
       id: Date.now().toString(),
       title,
       content,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      summary: null,
+      created_at: new Date().toISOString(),
     };
-
-    // Simulate a delay
-    setTimeout(() => {
-      onCreateNote(newNote);
-      setTitle("");
-      setContent("");
+    const response = await supabase.from("notes").insert(newNote).select();
+    if (response.error) {
+      console.error("Error adding note:", response.error);
       setIsLoading(false);
-    }, 500);
+      return;
+    }
+    onCreateNote(newNote);
+    setTitle("");
+    setContent("");
+    setIsLoading(false);
   };
 
   return (

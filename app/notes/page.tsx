@@ -12,9 +12,12 @@ import { DeleteNoteDialog } from "@/components/delete-note-dialog";
 import { SummarizeDialog } from "@/components/summarize-dialog";
 import type { Note } from "@/lib/types";
 import { EditNoteDialog } from "@/components/edit-note-dialog";
+import { supabase } from "@/lib/supabase";
+import { NoteSkeleton } from "@/components/note-skeleton";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -24,25 +27,34 @@ export default function NotesPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/signin");
-      return;
-    }
+  const fetchNotes = async () => {
+    setIsLoading(true);
+    try {
+      // Load notes from supabase
+      const notesResponse = await supabase.from("notes").select();
 
-    // Load notes from localStorage
-    const storedNotes = localStorage.getItem(`notes-${user.id}`);
-    if (storedNotes) {
-      setNotes(JSON.parse(storedNotes));
+      if (notesResponse.error) {
+        console.error("Error fetching notes:", notesResponse.error);
+        return;
+      }
+      if (notesResponse.data) {
+        setNotes(notesResponse.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notes:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // if (!user) {
+    //   router.push("/signin");
+    //   return;
+    // }
+
+    fetchNotes();
   }, [user, router]);
-
-  // Save notes to localStorage whenever they change
-  useEffect(() => {
-    if (user && notes.length > 0) {
-      localStorage.setItem(`notes-${user.id}`, JSON.stringify(notes));
-    }
-  }, [notes, user]);
 
   const handleCreateNote = (note: Note) => {
     const newNotes = [...notes, note];
@@ -90,8 +102,22 @@ export default function NotesPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSummarizeClick = () => {
+  const handleSummarizeClick = (note: Note) => {
+    setSelectedNote(note);
     setIsSummarizeDialogOpen(true);
+  };
+
+  const handleViewSummary = (note: Note) => {
+    setSelectedNote(note);
+    setIsSummarizeDialogOpen(true);
+  };
+
+  const handleUpdateNoteWithSummary = (updatedNote: Note) => {
+    // Update the note in the notes state
+    const newNotes = notes.map((note) =>
+      note.id === updatedNote.id ? updatedNote : note
+    );
+    setNotes(newNotes);
   };
 
   const handleSignOut = async () => {
@@ -99,9 +125,9 @@ export default function NotesPage() {
     router.push("/");
   };
 
-  if (!user) {
-    return null; // Will redirect in useEffect
-  }
+  // if (!user) {
+  //   return null; // Will redirect in useEffect
+  // }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -111,15 +137,6 @@ export default function NotesPage() {
             <span className="text-xl font-bold text-primary">NotesApp</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSummarizeClick}
-              disabled={notes.length === 0}
-              className="border-primary/70 text-primary hover:bg-secondary"
-            >
-              Summarize All Notes
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -144,25 +161,37 @@ export default function NotesPage() {
           </Button>
         </div>
 
-        <NotesList
-          notes={notes}
-          onEditNote={handleEditClick}
-          onDeleteNote={handleDeleteClick}
-        />
-
-        {notes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              You don&apos;t have any notes yet.
-            </p>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Your First Note
-            </Button>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <NoteSkeleton key={index} />
+            ))}
           </div>
+        ) : (
+          <>
+            <NotesList
+              notes={notes}
+              onEditNote={handleEditClick}
+              onDeleteNote={handleDeleteClick}
+              onSummarizeNote={handleSummarizeClick}
+              onViewSummary={handleViewSummary}
+            />
+
+            {notes.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground mb-4">
+                  You don&apos;t have any notes yet.
+                </p>
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Your First Note
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -186,14 +215,19 @@ export default function NotesPage() {
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
           onConfirm={handleDeleteNote}
+          note={selectedNote}
         />
       )}
 
-      <SummarizeDialog
-        open={isSummarizeDialogOpen}
-        onOpenChange={setIsSummarizeDialogOpen}
-        notes={notes}
-      />
+      {selectedNote && (
+        <SummarizeDialog
+          open={isSummarizeDialogOpen}
+          onOpenChange={setIsSummarizeDialogOpen}
+          note={selectedNote}
+          isViewMode={!!selectedNote.summary && selectedNote.summary.length > 0}
+          onUpdateNote={handleUpdateNoteWithSummary}
+        />
+      )}
     </div>
   );
 }
