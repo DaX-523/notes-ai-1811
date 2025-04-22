@@ -15,7 +15,13 @@ const Header = ({ onSignOut }: HeaderProps) => {
       <div className="container flex h-24 items-center justify-between">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Image src={logo} alt="logo" width={100} height={100} />
+            <Image
+              className="min-w-10"
+              src={logo}
+              alt="logo"
+              width={100}
+              height={100}
+            />
           </Link>{" "}
         </div>
         <div className="flex items-center gap-4">

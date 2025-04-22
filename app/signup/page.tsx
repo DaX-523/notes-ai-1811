@@ -4,12 +4,12 @@ import type React from "react";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import GoogleOneTapComponent from "@/components/google-auth";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -18,7 +18,6 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,16 +35,19 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      await signUp(name, email, password);
+      await signUp({ name, email, password, confirmPassword });
       toast({
         title: "Success",
-        description: "Your account has been created. Please sign in.",
+        description:
+          "Your account has been created. Please confrim your email to sign in.",
       });
-      router.push("/signin");
     } catch (error) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -159,6 +161,7 @@ export default function SignUpPage() {
               Sign In
             </Link>
           </div>
+          <GoogleOneTapComponent />
         </div>
       </div>
     </div>

@@ -63,7 +63,6 @@ export async function summarizeWithGroq(content: string): Promise<string> {
     }
 
     const data = (await response.json()) as GroqResponse;
-    console.log(data);
     return data.choices[0]?.message?.content || "Unable to generate summary.";
   } catch (error) {
     console.error("Error summarizing with Groq:", error);

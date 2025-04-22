@@ -21,6 +21,7 @@ interface CreateNoteDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreateNote: (note: Note) => void;
   isLoading?: boolean;
+  userId: string;
 }
 
 export function CreateNoteDialog({
@@ -28,6 +29,7 @@ export function CreateNoteDialog({
   onOpenChange,
   onCreateNote,
   isLoading = false,
+  userId,
 }: CreateNoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -42,6 +44,7 @@ export function CreateNoteDialog({
       content,
       summary: null,
       created_at: new Date().toISOString(),
+      user_id: userId,
     };
 
     // Let the parent component handle the API call through the mutation

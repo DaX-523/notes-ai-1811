@@ -63,7 +63,7 @@ export function SummarizeDialog({
         return;
       }
 
-      // Use Groq API for summarization
+      // Uses Groq API for summarization
       const result = await summarizeWithGroq(content);
 
       // Create updated note object with the new summary
@@ -95,7 +95,6 @@ export function SummarizeDialog({
       ? "AI-generated summary of your note"
       : "AI-generated summary powered by Groq";
 
-  // Determine appropriate button text based on context
   const buttonText =
     isViewMode && note?.summary
       ? "Regenerate Summary"

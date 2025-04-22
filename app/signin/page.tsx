@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import GoogleOneTapComponent from "@/components/google-auth";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn({ email, password });
       toast({
         title: "Success",
         description: "You have successfully signed in.",
@@ -33,7 +34,10 @@ export default function SignInPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Invalid email or password. Please try again.",
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -51,6 +55,17 @@ export default function SignInPage() {
           </p>
         </div>
         <div className="grid gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border/50" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with Email
+              </span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-foreground">
@@ -100,21 +115,15 @@ export default function SignInPage() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/50" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or
-              </span>
-            </div>
-          </div>
+
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-primary hover:underline">
               Sign Up
             </Link>
+          </div>
+          <div className="grid gap-2">
+            <GoogleOneTapComponent />
           </div>
         </div>
       </div>

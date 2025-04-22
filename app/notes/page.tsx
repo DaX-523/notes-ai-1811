@@ -12,7 +12,6 @@ import { DeleteNoteDialog } from "@/components/delete-note-dialog";
 import { SummarizeDialog } from "@/components/summarize-dialog";
 import type { Note } from "@/lib/types";
 import { EditNoteDialog } from "@/components/edit-note-dialog";
-import { supabase, serializeSupabaseData } from "@/lib/supabase";
 import { NoteSkeleton } from "@/components/note-skeleton";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
@@ -30,27 +29,24 @@ export default function NotesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSummarizeDialogOpen, setIsSummarizeDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const { user, signOut } = useAuth();
+  const { authState, signOut } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query for fetching notes
+  // tanstack-query for fetching notes
   const {
     data: notes = [],
     isLoading,
     error,
   } = useQuery({
     queryKey: ["notes"],
-    queryFn: fetchNotes,
+    queryFn: () => {
+      if (!authState.user) return [];
+      return fetchNotes(authState.user.id as string);
+    },
+    enabled: !!authState.user, // Only enable the query when user exists
   });
-
-  useEffect(() => {
-    // if (!user) {
-    //   router.push("/signin");
-    //   return;
-    // }
-  }, [user, router]);
 
   // Create note mutation
   const createNoteMutation = useMutation({
@@ -131,17 +127,17 @@ export default function NotesPage() {
   // Delete note mutation
   const deleteNoteMutation = useMutation({
     mutationFn: deleteNote,
-    onMutate: async (noteId) => {
+    onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey: ["notes"] });
       const previousNotes = queryClient.getQueryData(["notes"]) as Note[];
 
       queryClient.setQueryData(["notes"], (old: Note[] = []) =>
-        old.filter((note) => note.id !== noteId)
+        old.filter((note) => note.id !== params.noteId)
       );
 
       return { previousNotes };
     },
-    onError: (err, noteId, context) => {
+    onError: (err, params, context) => {
       if (context?.previousNotes) {
         queryClient.setQueryData(["notes"], context.previousNotes);
       }
@@ -186,27 +182,69 @@ export default function NotesPage() {
     },
   });
 
+  // Check for loading states from mutations
+  const isCreating = createNoteMutation.isPending;
+  const isUpdating = updateNoteMutation.isPending;
+  const isDeleting = deleteNoteMutation.isPending;
+  const isMutating = isCreating || isUpdating || isDeleting;
+
+  useEffect(() => {
+    if (!authState.user) {
+      router.push("/signin");
+    }
+  }, [authState.user, router]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  // mutations based on user clicks
+  // Define all handlers
   const handleCreateNote = (note: Note) => {
-    createNoteMutation.mutate(note);
+    if (!authState.user) return;
+    // Make sure user_id is included
+    const noteWithUserId = {
+      ...note,
+      user_id: authState.user.id,
+    };
+    createNoteMutation.mutate(noteWithUserId);
     setIsCreateDialogOpen(false);
   };
 
   const handleEditNote = (updatedNote: Note) => {
-    updateNoteMutation.mutate(updatedNote);
+    if (!authState.user) return;
+    // Make sure user_id is included
+    const noteWithUserId = {
+      ...updatedNote,
+      user_id: authState.user.id,
+    };
+    updateNoteMutation.mutate(noteWithUserId);
     setIsEditDialogOpen(false);
     setSelectedNote(null);
   };
 
   const handleDeleteNote = () => {
-    if (selectedNote) {
-      deleteNoteMutation.mutate(selectedNote.id);
-      setIsDeleteDialogOpen(false);
-      setSelectedNote(null);
-    }
+    if (!authState.user || !selectedNote) return;
+    // Pass both noteId and userId for security
+    deleteNoteMutation.mutate({
+      noteId: selectedNote.id,
+      userId: authState.user.id,
+    });
+    setIsDeleteDialogOpen(false);
+    setSelectedNote(null);
   };
 
   const handleUpdateNoteWithSummary = (updatedNote: Note) => {
-    updateSummaryMutation.mutate(updatedNote);
+    if (!authState.user) return;
+    const noteWithUserId = {
+      ...updatedNote,
+      user_id: authState.user.id,
+    };
+    updateSummaryMutation.mutate(noteWithUserId);
   };
 
   const handleEditClick = (note: Note) => {
@@ -229,17 +267,12 @@ export default function NotesPage() {
     setIsSummarizeDialogOpen(true);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
-  };
+  // for route protection
+  if (!authState.user) {
+    return null;
+  }
 
-  // Check for loading states from mutations
-  const isCreating = createNoteMutation.isPending;
-  const isUpdating = updateNoteMutation.isPending;
-  const isDeleting = deleteNoteMutation.isPending;
-  const isMutating = isCreating || isUpdating || isDeleting;
-
+  // Rest of the component rendering logic
   return (
     <div className="flex min-h-screen flex-col">
       <Header onSignOut={handleSignOut} />
@@ -307,6 +340,7 @@ export default function NotesPage() {
         onOpenChange={setIsCreateDialogOpen}
         onCreateNote={handleCreateNote}
         isLoading={isCreating}
+        userId={authState.user.id}
       />
 
       {selectedNote && (
