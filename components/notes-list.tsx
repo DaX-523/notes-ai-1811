@@ -36,7 +36,7 @@ export function NotesList({
       {notes.map((note) => (
         <Card
           key={note.id}
-          className="flex flex-col card-gradient border-border/50 hover:border-primary/50 transition-all"
+          className="flex flex-col bg-black/50 border-border/50 hover:border-primary/50 transition-all"
         >
           <CardHeader className="pb-2">
             <CardTitle className="line-clamp-1 text-foreground">
