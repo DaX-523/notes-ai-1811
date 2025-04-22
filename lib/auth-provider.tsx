@@ -214,7 +214,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push("/signin");
     } catch (error) {
       let errorMsg = error instanceof Error ? error.message : "Signup failed";
-      console.log(error);
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,
