@@ -2,6 +2,16 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/public/logo.png";
+import dynamic from "next/dynamic";
+
+// Dynamically import Particles component with no SSR
+const ParticlesContainer = dynamic(
+  () => import("@/components/particles-background"),
+  {
+    ssr: false,
+  }
+);
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -35,8 +45,10 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
+      <main className="flex-1 relative">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 relative z-10">
+          {/* Particles Background */}
+          <ParticlesContainer />
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
