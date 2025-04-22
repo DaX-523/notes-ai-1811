@@ -1,10 +1,12 @@
-import type React from "react";
-import type { Metadata } from "next";
+import React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/auth-provider";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Metadata } from "next";
+import NextQueryProvider from "@/lib/tanstack-query-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} gradient-bg min-h-screen`}>
+      <body
+        className={`${inter.className} gradient-bg min-h-screen`}
+        suppressHydrationWarning={true}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -29,8 +34,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
-            <Toaster />
+            <NextQueryProvider>
+              {children}
+              <Toaster />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </NextQueryProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

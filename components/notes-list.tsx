@@ -20,6 +20,7 @@ interface NotesListProps {
   onDeleteNote: (note: Note) => void;
   onSummarizeNote: (note: Note) => void;
   onViewSummary: (note: Note) => void;
+  isLoading?: boolean;
 }
 
 export function NotesList({
@@ -28,6 +29,7 @@ export function NotesList({
   onDeleteNote,
   onSummarizeNote,
   onViewSummary,
+  isLoading = false,
 }: NotesListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

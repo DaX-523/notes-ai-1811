@@ -15,27 +15,27 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Note } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
 
 interface CreateNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateNote: (note: Note) => void;
+  isLoading?: boolean;
 }
 
 export function CreateNoteDialog({
   open,
   onOpenChange,
   onCreateNote,
+  isLoading = false,
 }: CreateNoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
+    // Create a new note object
     const newNote: Note = {
       id: Date.now().toString(),
       title,
@@ -43,16 +43,13 @@ export function CreateNoteDialog({
       summary: null,
       created_at: new Date().toISOString(),
     };
-    const response = await supabase.from("notes").insert(newNote).select();
-    if (response.error) {
-      console.error("Error adding note:", response.error);
-      setIsLoading(false);
-      return;
-    }
+
+    // Let the parent component handle the API call through the mutation
     onCreateNote(newNote);
+
+    // Clear form fields
     setTitle("");
     setContent("");
-    setIsLoading(false);
   };
 
   return (
@@ -104,7 +101,14 @@ export function CreateNoteDialog({
               disabled={isLoading || !title || !content}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isLoading ? "Creating..." : "Create Note"}
+              {isLoading ? (
+                <>
+                  Creating...
+                  <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                </>
+              ) : (
+                "Create Note"
+              )}
             </Button>
           </DialogFooter>
         </form>

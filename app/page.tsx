@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
+import logo from "@/public/logo.png";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center">
+        <div className="container flex h-24 items-center">
           <div className="mr-4 flex">
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="text-xl font-bold text-primary">NotesApp</span>
+              <Image src={logo} alt="logo" width={100} height={100} />
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end space-x-4">
@@ -118,7 +120,7 @@ export default function Home() {
       <footer className="border-t border-border/40 py-6 md:py-0">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © 2025 NotesApp. All rights reserved.
+            © 2025 Notes Hive. All rights reserved.
           </p>
         </div>
       </footer>

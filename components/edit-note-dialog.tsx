@@ -15,13 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Note } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
 
 interface EditNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   note: Note;
   onUpdateNote: (note: Note) => void;
+  isLoading?: boolean;
 }
 
 export function EditNoteDialog({
@@ -29,10 +29,10 @@ export function EditNoteDialog({
   onOpenChange,
   note,
   onUpdateNote,
+  isLoading = false,
 }: EditNoteDialogProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Update state when note changes
   useEffect(() => {
@@ -42,25 +42,16 @@ export function EditNoteDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
+    // Create the updated note object
     const updatedNote: Note = {
       ...note,
       title,
       content,
     };
-    const response = await supabase
-      .from("notes")
-      .update(updatedNote)
-      .eq("id", note?.id)
-      .select();
-    if (response.error) {
-      console.error("Error updating note:", response.error);
-      setIsLoading(false);
-      return;
-    }
+
+    // Let the parent component handle the API call through the mutation
     onUpdateNote(updatedNote);
-    setIsLoading(false);
   };
 
   return (
@@ -112,7 +103,14 @@ export function EditNoteDialog({
               disabled={isLoading || !title || !content}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isLoading ? "Updating..." : "Update Note"}
+              {isLoading ? (
+                <>
+                  Updating...
+                  <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                </>
+              ) : (
+                "Update Note"
+              )}
             </Button>
           </DialogFooter>
         </form>

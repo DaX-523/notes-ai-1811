@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Note } from "@/lib/types";
 import { summarizeWithGroq } from "@/lib/groq-api";
-import { supabase } from "@/lib/supabase";
 
 interface SummarizeDialogProps {
   open: boolean;
@@ -21,6 +20,7 @@ interface SummarizeDialogProps {
   note: Note;
   isViewMode?: boolean;
   onUpdateNote?: (note: Note) => void;
+  isLoading?: boolean;
 }
 
 export function SummarizeDialog({
@@ -29,10 +29,14 @@ export function SummarizeDialog({
   note,
   isViewMode = false,
   onUpdateNote,
+  isLoading: externalLoading = false,
 }: SummarizeDialogProps) {
   const [summary, setSummary] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Combine both loading states
+  const isLoading = externalLoading || internalLoading;
 
   useEffect(() => {
     if (open) {
@@ -47,7 +51,7 @@ export function SummarizeDialog({
   }, [open, note, isViewMode]);
 
   const generateSummary = async () => {
-    setIsLoading(true);
+    setInternalLoading(true);
     setError(null);
 
     try {
@@ -55,32 +59,22 @@ export function SummarizeDialog({
 
       if (!content || content.trim() === "") {
         setSummary("No content to summarize.");
-        setIsLoading(false);
+        setInternalLoading(false);
         return;
       }
 
       // Use Groq API for summarization
       const result = await summarizeWithGroq(content);
 
-      // Update note with new summary in the database
-      const response = await supabase
-        .from("notes")
-        .update({ summary: result })
-        .eq("id", note?.id);
+      // Create updated note object with the new summary
+      const updatedNote = {
+        ...note,
+        summary: result,
+      };
 
-      if (response.error) {
-        console.error("Error saving summary:", response.error);
-      } else {
-        // Create updated note object with the new summary
-        const updatedNote = {
-          ...note,
-          summary: result,
-        };
-
-        // Update the local state in the parent component
-        if (onUpdateNote) {
-          onUpdateNote(updatedNote);
-        }
+      // Update the local state in the parent component
+      if (onUpdateNote) {
+        onUpdateNote(updatedNote);
       }
 
       setSummary(result);
@@ -89,7 +83,7 @@ export function SummarizeDialog({
       setError("Failed to generate summary. Please try again later.");
       setSummary("");
     } finally {
-      setIsLoading(false);
+      setInternalLoading(false);
     }
   };
 
@@ -138,6 +132,7 @@ export function SummarizeDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isLoading}
           >
             Close
           </Button>
